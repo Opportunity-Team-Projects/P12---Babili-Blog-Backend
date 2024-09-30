@@ -13,6 +13,11 @@ return new class extends Migration
     {
         Schema::create('comments', function (Blueprint $table) {
             $table->id();
+            $table->string('commentTitle');
+            $table->text('commentContent');
+            // Setzt Fremdschlüssel für User_id, costrained macht automatisch die verknüpfung, onDelete'cascade' löscht alle posts wenn usgelöscht wird
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('post_id')->constrained()->onDelete('cascade');
             $table->timestamps();
         });
     }
