@@ -28,7 +28,20 @@ class PostController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        // Validierung der Eingabedaten
+        $validatedData = $request->validate([
+            'contentTitle' => 'required|max:255',
+            'content' => 'required',
+            'contentPreview' => 'max:100',
+        ]);
+
+        // Einen neuen Post erstellen und die user_id automatisch vom eingeloggten Benutzer setzen
+        $post = new Post($validatedData);
+        $post->user_id = auth()->id();  // Die ID des aktuell eingeloggten Benutzers setzen
+        $post->save();
+
+        // Weiterleiten oder Rückgabe
+        return redirect()->route('posts.index')->with('success', 'Post erstellt!');
     }
 
     /**
