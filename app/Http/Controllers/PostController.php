@@ -12,7 +12,14 @@ class PostController extends Controller
      */
     public function index()
     {
-        //
+        $posts = Post::all();  // Alle Posts abrufen
+        return view('posts.index', compact('posts'));  // An die View 'posts.index' weitergeben
+    }
+
+    public function myPosts()
+    {
+        $posts = Post::where('user_id', auth()->user()->id)->get();  // Nur Posts des aktuell eingeloggten Benutzers
+
     }
 
     /**

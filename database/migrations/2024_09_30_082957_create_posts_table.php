@@ -15,11 +15,11 @@ return new class extends Migration
             $table->id();
             $table->string('contentTitle');
             $table->text('content');
-            $table->string('contentImg');
-            $table->string('contentPreview');
-            $table->string('slug');
+            $table->string('contentImg')->nullable();
+            $table->string('contentPreview')->nullable();
+            $table->string('slug')->nullable();
             // Setzt Fremdschlüssel für User_id, costrained macht automatisch die verknüpfung, onDelete'cascade' löscht alle posts wenn user gelöscht wird
-            $table->foreign('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->timestamps();
         });
     }
