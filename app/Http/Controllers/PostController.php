@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Post;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class PostController extends Controller
 {
@@ -23,20 +24,13 @@ class PostController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
 
-    /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
     {
         // Log für Debugging
-        \Log::info('store() wurde aufgerufen', ['request' => $request->all()]);
+        Log::info('store() wurde aufgerufen', ['request' => $request->all()]);
 
         // Validierung
         $validatedData = $request->validate([
@@ -65,21 +59,36 @@ class PostController extends Controller
         //
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(post $post)
-    {
-        //
-    }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, post $post)
+    public function update(Request $request, Post $post)
     {
-        //
+        // Überprüfen, ob der Benutzer autorisiert ist, den Post zu aktualisieren
+        if (auth()->id() !== $post->user_id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        // Validierung: Bei PATCH nur teilweise Felder erforderlich, bei PUT alle
+        $rules = [
+            'contentTitle' => $request->isMethod('patch') ? 'sometimes|max:255' : 'required|max:255',
+            'content' => $request->isMethod('patch') ? 'sometimes' : 'required',
+            'contentPreview' => 'max:100',
+        ];
+
+        $validatedData = $request->validate($rules);
+
+        // Post aktualisieren
+        $post->update($validatedData);
+
+        // Erfolgreiche Antwort zurückgeben
+        return response()->json([
+            'message' => 'Post erfolgreich aktualisiert!',
+            'post' => $post
+        ], 200);
     }
+
 
     /**
      * Remove the specified resource from storage.
