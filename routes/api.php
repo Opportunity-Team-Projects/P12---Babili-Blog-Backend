@@ -4,14 +4,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PostController;
 
-Route::get('/index', [PostController::class, 'index']);
+// Öffentliche Route für alle Posts (ohne Authentifizierung)
+Route::get('/index', [PostController::class, 'index']);  // Alle Posts anzeigen
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
-
+// Geschützte Routen für CRUD-Operationen auf /posts
 Route::middleware('auth:sanctum')->group(function () {
-    Route::resource('posts', PostController::class);
+    Route::get('/myposts', [PostController::class, 'myPosts']);  // Posts des eingeloggten Benutzers
+    Route::resource('posts', PostController::class);  // CRUD für Posts (Erstellen, Bearbeiten, Löschen)
 });
-
-Route::post('/posts', [PostController::class, 'store'])->middleware('auth:sanctum');
