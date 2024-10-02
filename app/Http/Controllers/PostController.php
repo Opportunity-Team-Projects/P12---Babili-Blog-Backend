@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use App\Models\Post;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -21,6 +22,18 @@ class PostController extends Controller
     {
         $posts = Post::where('user_id', auth()->user()->id)->get();  // Nur Posts des aktuell eingeloggten Benutzers
         return response()->json($posts);
+    }
+
+    public function getPostsByUsername($username)
+    {
+        $user = User::where('name', 'like', '%' . $username . '%')->first();
+
+        if ($user) {
+            $posts = Post::where('user_id', $user->id)->get();
+            return response()->json($posts);
+        } else {
+            return response()->json(['message' => 'User not found'], 404);
+        }
     }
 
     /**
