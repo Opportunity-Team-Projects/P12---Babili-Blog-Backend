@@ -14,13 +14,13 @@ class PostController extends Controller
      */
     public function index()
     {
-        $posts = Post::all();  // Alle Posts abrufen
+        $posts = Post::with('categories')->get(); // Alle Posts abrufen
         return response()->json($posts);
     }
 
     public function myPosts()
     {
-        $posts = Post::where('user_id', auth()->user()->id)->get();  // Nur Posts des aktuell eingeloggten Benutzers
+        $posts = Post::with('categories')->where('user_id', auth()->user()->id)->get();  // Nur Posts des aktuell eingeloggten Benutzers
         return response()->json($posts);
     }
 
@@ -29,7 +29,8 @@ class PostController extends Controller
         $user = User::where('name', 'like', '%' . $username . '%')->first();
 
         if ($user) {
-            $posts = Post::where('user_id', $user->id)->get();
+            // Lade die Posts des Benutzers zusammen mit den Kategorien
+            $posts = Post::with('categories')->where('user_id', $user->id)->get();
             return response()->json($posts);
         } else {
             return response()->json(['message' => 'User not found'], 404);
@@ -40,29 +41,33 @@ class PostController extends Controller
 
      * Store a newly created resource in storage.
      */
+
     public function store(Request $request)
     {
-        // Log für Debugging
-        Log::info('store() wurde aufgerufen', ['request' => $request->all()]);
-
-        // Validierung
-        $validatedData = $request->validate([
-            'contentTitle' => 'required|max:255',
+        $validated = $request->validate([
+            'contentTitle' => 'required|string|max:255',
             'content' => 'required',
-            'contentPreview' => 'max:100',
+            'contentPreview' => 'nullable|string|max:100', // Optionaler Vorschautext
+            'contentImg' => 'nullable|string', // Optionale Bild-URL
+            'category_ids' => 'required|array', // Validierung für ein Array von Kategorie-IDs
+            'category_ids.*' => 'exists:categories,id', // Jede Kategorie-ID muss in der Kategorie-Tabelle existieren
         ]);
 
-        // Post erstellen
-        $post = new Post($validatedData);
-        $post->user_id = auth()->id();
+        $post = new Post();
+        $post->contentTitle = $validated['contentTitle'];
+        $post->content = $validated['content'];
+        $post->contentPreview = $validated['contentPreview'] ?? null; // Optional, falls vorhanden
+        $post->contentImg = $validated['contentImg'] ?? null; // Optional, falls vorhanden
+        $post->user_id = auth()->id(); // Der eingeloggte Benutzer
+
         $post->save();
 
-        // Rückmeldung
-        return response()->json([
-            'message' => 'Post erfolgreich erstellt!',
-            'post' => $post
-        ], 201);
+        // Verknüpft den Post mit den Kategorien
+        $post->categories()->attach($validated['category_ids']);
+
+        return response()->json(['message' => 'Post created successfully!']);
     }
+
 
     /**
      * Display the specified resource.
@@ -87,7 +92,10 @@ class PostController extends Controller
         $rules = [
             'contentTitle' => $request->isMethod('patch') ? 'sometimes|max:255' : 'required|max:255',
             'content' => $request->isMethod('patch') ? 'sometimes' : 'required',
-            'contentPreview' => 'max:100',
+            'contentPreview' => 'nullable|string|max:100', // Optionaler Vorschautext
+            'contentImg' => 'nullable|string', // Optionale Bild-URL
+            'category_ids' => 'sometimes|array', // Kategorie-IDs als Array, falls vorhanden
+            'category_ids.*' => 'exists:categories,id' // Jede Kategorie-ID muss existieren
         ];
 
         $validatedData = $request->validate($rules);
@@ -95,12 +103,18 @@ class PostController extends Controller
         // Post aktualisieren
         $post->update($validatedData);
 
+        // Wenn Kategorien übermittelt wurden, aktualisiere die Pivot-Tabelle
+        if (isset($validatedData['category_ids'])) {
+            $post->categories()->sync($validatedData['category_ids']); // Kategorien synchronisieren
+        }
+
         // Erfolgreiche Antwort zurückgeben
         return response()->json([
             'message' => 'Post erfolgreich aktualisiert!',
             'post' => $post
         ], 200);
     }
+
 
 
     /**

@@ -13,7 +13,8 @@ class Post extends Model
         'contentTitle',
         'content',
         'contentPreview',
-        'contentImg,slug',
+        'contentImg',
+        'slug',
     ];
 
     public function user()
