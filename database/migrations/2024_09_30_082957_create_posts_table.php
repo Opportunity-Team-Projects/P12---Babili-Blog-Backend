@@ -16,7 +16,6 @@ return new class extends Migration
             $table->string('contentTitle');
             $table->text('content');
             $table->string('contentImg')->nullable();
-            $table->string('contentPreview')->nullable();
             $table->string('slug')->nullable();
             // Setzt Fremdschlüssel für User_id, costrained macht automatisch die verknüpfung, onDelete'cascade' löscht alle posts wenn user gelöscht wird
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');

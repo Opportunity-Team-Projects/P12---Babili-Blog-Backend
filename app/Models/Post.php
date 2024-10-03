@@ -12,7 +12,6 @@ class Post extends Model
     protected $fillable = [
         'contentTitle',
         'content',
-        'contentPreview',
         'contentImg',
         'slug',
     ];
@@ -29,7 +28,7 @@ class Post extends Model
 
     public function categories()
     {
-        return $this->belongsToMany(Category::class);
+        return $this->belongsToMany(Category::class)->withTimestamps();
     }
 
     public function likes()

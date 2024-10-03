@@ -24,9 +24,9 @@ class PostController extends Controller
         return response()->json($posts);
     }
 
-    public function getPostsByUsername($username)
+    public function getPostsByUser($userId)
     {
-        $user = User::where('name', 'like', '%' . $username . '%')->first();
+        $user = User::find($userId);
 
         if ($user) {
             // Lade die Posts des Benutzers zusammen mit den Kategorien
@@ -92,7 +92,6 @@ class PostController extends Controller
         $rules = [
             'contentTitle' => $request->isMethod('patch') ? 'sometimes|max:255' : 'required|max:255',
             'content' => $request->isMethod('patch') ? 'sometimes' : 'required',
-            'contentPreview' => 'nullable|string|max:100', // Optionaler Vorschautext
             'contentImg' => 'nullable|string', // Optionale Bild-URL
             'category_ids' => 'sometimes|array', // Kategorie-IDs als Array, falls vorhanden
             'category_ids.*' => 'exists:categories,id' // Jede Kategorie-ID muss existieren
