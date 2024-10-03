@@ -24,6 +24,29 @@ class PostController extends Controller
         return response()->json($posts);
     }
 
+    public function search(Request $request)
+    {
+        $query = $request->input('query'); // Der Suchbegriff
+        $keywords = explode(' ', $query); // Suchbegriff in einzelne Wörter aufteilen
+
+        $posts = Post::where(function ($query) use ($keywords) {
+            foreach ($keywords as $word) {
+                $query->orWhereHas('user', function ($q) use ($word) {
+                    $q->where('name', 'LIKE', '%' . $word . '%'); // Benutzername
+                })
+                    ->orWhereHas('categories', function ($q) use ($word) {
+                        $q->where('categoryName', 'LIKE', '%' . $word . '%'); // Kategoriename
+                    })
+                    ->orWhere('contentTitle', 'LIKE', '%' . $word . '%'); // contentTitle in der Posts-Tabelle
+            }
+        })->get();
+
+        return response()->json($posts);
+    }
+
+
+
+
     public function getPostsByUser($userId)
     {
         $user = User::find($userId);

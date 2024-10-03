@@ -8,6 +8,8 @@ use App\Http\Controllers\PostController;
 // Öffentliche Route für alle Posts (ohne Authentifizierung)
 Route::get('/index', [PostController::class, 'index']);  // Alle Posts anzeigen
 Route::get('/posts/user/{userId}', [PostController::class, 'getPostsByUser']);
+Route::get('/search', [PostController::class, 'search'])->name('search');
+
 
 
 
