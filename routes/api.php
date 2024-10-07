@@ -31,6 +31,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/categories', [CategoryController::class, 'index']);
 
     //User
+    Route::post('/user/update/name', [UserController::class, 'updateUsername']);
     Route::post('/user/update/password', [UserController::class, 'updatePassword']);
     Route::post('/user/update/email', [UserController::class, 'updateEmail']);
     Route::post('/user/update/pic', [UserController::class, 'updateProfilePic']);
