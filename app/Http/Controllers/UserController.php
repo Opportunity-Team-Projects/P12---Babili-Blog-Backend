@@ -159,4 +159,15 @@ class UserController extends Controller
 
         return response()->json(['message' => 'Profilbild erfolgreich aktualisiert', 'profile_pic_url' => $profilePicUrl], 200);
     }
+
+    public function deleteAccount()
+    {
+        // Hole den eingeloggten Benutzer
+        $user = auth()->user();
+
+        // Lösche den Benutzer
+        $user->delete();
+
+        return response()->json(['message' => 'Account deleted successfully'], 200);
+    }
 }

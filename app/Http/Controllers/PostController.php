@@ -61,59 +61,62 @@ class PostController extends Controller
     }
 
     public function getPostsByCategory($categoryId)
-{
-    // Hole alle Posts, die zur angegebenen Kategorie gehören
-    $posts = Post::whereHas('categories', function($query) use ($categoryId) {
-        $query->where('categories.id', $categoryId);
-    })->get();
+    {
+        // Hole alle Posts, die zur angegebenen Kategorie gehören
+        $posts = Post::whereHas('categories', function ($query) use ($categoryId) {
+            $query->where('categories.id', $categoryId);
+        })->get();
 
-    // Rückgabe der Posts im JSON-Format
-    return response()->json(['posts' => $posts], 200);
-}
+        // Rückgabe der Posts im JSON-Format
+        return response()->json(['posts' => $posts], 200);
+    }
 
     /**
 
      * Store a newly created resource in storage.
      */
 
-     public function store(Request $request)
-     {
-         $validated = $request->validate([
-             'contentTitle' => 'required|string|max:255',
-             'content' => 'required',
-             'contentImg' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:4096', // Optionales Bild
-             'category_ids' => 'required|array', // Validierung für ein Array von Kategorie-IDs
-             'category_ids.*' => 'exists:categories,id', // Jede Kategorie-ID muss in der Kategorie-Tabelle existieren
-         ]);
-     
-         // Neuen Post erstellen
-         $post = new Post();
-         $post->contentTitle = $validated['contentTitle'];
-         $post->content = $validated['content'];
-         $post->user_id = auth()->id(); // Der eingeloggte Benutzer
-     
-         // Speichere das contentImg, falls es vorhanden ist
-         if ($request->hasFile('contentImg')) {
-             $contentImgPath = $request->file('contentImg')->store('content_images', 'public');
-             $post->contentImg = $contentImgPath; // Speichere den Pfad in der Datenbank
-         }
-     
-         $post->save();
-     
-         // Verknüpft den Post mit den Kategorien
-         $post->categories()->attach($validated['category_ids']);
-     
-         return response()->json(['message' => 'Post created successfully!', 'post' => $post], 201);
-     }
-     
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'contentTitle' => 'required|string|max:255',
+            'content' => 'required',
+            'contentImg' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:4096', // Optionales Bild
+            'category_ids' => 'required|array', // Validierung für ein Array von Kategorie-IDs
+            'category_ids.*' => 'exists:categories,id', // Jede Kategorie-ID muss in der Kategorie-Tabelle existieren
+        ]);
+
+        // Neuen Post erstellen
+        $post = new Post();
+        $post->contentTitle = $validated['contentTitle'];
+        $post->content = $validated['content'];
+        $post->user_id = auth()->id(); // Der eingeloggte Benutzer
+
+        // Speichere das contentImg, falls es vorhanden ist
+        if ($request->hasFile('contentImg')) {
+            $contentImgPath = $request->file('contentImg')->store('content_images', 'public');
+            $post->contentImg = $contentImgPath; // Speichere den Pfad in der Datenbank
+        }
+
+        $post->save();
+
+        // Verknüpft den Post mit den Kategorien
+        $post->categories()->attach($validated['category_ids']);
+
+        return response()->json(['message' => 'Post created successfully!', 'post' => $post], 201);
+    }
+
 
 
     /**
      * Display the specified resource.
      */
-    public function show(post $post)
+    public function show($id)
     {
-        //
+        // Post anhand der ID finden, inklusive Benutzer und Kommentare (Eager Loading)
+        $post = Post::with(['user', 'comments.user', 'categories'])->findOrFail($id);
+
+        return response()->json(['post' => $post], 200);
     }
 
 
