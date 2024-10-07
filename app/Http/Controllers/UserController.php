@@ -24,26 +24,48 @@ class UserController extends Controller
         return response()->json(['message' => 'User not authenticated'], 401);
     }
 }
-    public function register(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
-        ]);
+public function register(Request $request)
+{
+    // Validierung der Eingabedaten, einschließlich des Profilbildes
+    $validator = Validator::make($request->all(), [
+        'name' => 'required|string|max:255',
+        'email' => 'required|string|email|max:255|unique:users',
+        'password' => 'required|string|min:8|confirmed',
+        'profile_pic' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048', // Optionales Profilbild
+    ]);
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
-
-        return response()->json(['user' => $user], 201);
+    if ($validator->fails()) {
+        return response()->json(['errors' => $validator->errors()], 422);
     }
+
+    // Speichere den Benutzer
+    $user = User::create([
+        'name' => $request->name,
+        'email' => $request->email,
+        'password' => Hash::make($request->password),
+    ]);
+
+    // Speichere das Profilbild, falls es vorhanden ist
+    if ($request->hasFile('profile_pic')) {
+        $path = $request->file('profile_pic')->store('profile_pics', 'public');
+        $user->profile_pic = $path; // Speichere den Pfad in der Datenbank
+        $user->save();
+    }
+
+    // Generiere die öffentliche URL des Profilbildes
+    $profilePicUrl = $user->profile_pic ? asset('storage/' . $user->profile_pic) : null;
+
+    // Rückgabe der Benutzerdaten, einschließlich der Profilbild-URL
+    return response()->json([
+        'user' => [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'profile_pic_url' => $profilePicUrl,
+        ],
+    ], 201);
+}
+
 
     public function updatePassword(Request $request)
     {

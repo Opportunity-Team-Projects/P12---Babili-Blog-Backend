@@ -12,6 +12,7 @@ use App\Http\Controllers\UserController;
 
 Route::get('/index', [PostController::class, 'index']);  // Alle Posts anzeigen
 Route::get('/posts/user/{userId}', [PostController::class, 'getPostsByUser']);
+Route::get('/posts/category/{categoryId}', [PostController::class, 'getPostsByCategory']);
 Route::get('/search', [PostController::class, 'search'])->name('search');
 
 //User
