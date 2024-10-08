@@ -22,6 +22,12 @@ Route::get('/posts/{id}', [PostController::class, 'show']);
 
 Route::post('/register', [UserController::class, 'register']);
 
+//Password
+Route::get('/reset-password/{token}', function ($token) {
+    return view('auth.reset-password', ['token' => $token]);
+})->name('password.reset');
+
+
 
 
 
