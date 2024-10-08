@@ -174,4 +174,12 @@ class PostController extends Controller
         // Erfolgreiche Antwort zurückgeben
         return response()->json(['message' => 'Post erfolgreich gelöscht!'], 200);
     }
+
+    public function countLikes($postId)
+    {
+        $post = Post::findOrFail($postId);
+        $likeCount = $post->likes()->count();
+
+        return response()->json(['post_id' => $postId, 'likes' => $likeCount]);
+    }
 }

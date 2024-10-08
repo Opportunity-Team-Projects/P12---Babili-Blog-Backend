@@ -6,7 +6,9 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\UserController;
-use App\Models\Comment;
+use App\Http\Controllers\FollowController;
+use App\Http\Controllers\LikeController;
+
 
 // Öffentliche Route für alle Posts (ohne Authentifizierung)
 
@@ -17,6 +19,12 @@ Route::get('/posts/user/{userId}', [PostController::class, 'getPostsByUser']);
 Route::get('/posts/category/{categoryId}', [PostController::class, 'getPostsByCategory']);
 Route::get('/search', [PostController::class, 'search'])->name('search');
 Route::get('/posts/{id}', [PostController::class, 'show']);
+
+// Likes zählen für einen bestimmten Post
+Route::get('/posts/{postId}/likes', [PostController::class, 'countLikes']);
+
+// Likes zählen für einen bestimmten Kommentar
+Route::get('/comments/{commentId}/likes', [CommentController::class, 'countLikes']);
 
 //User
 
@@ -53,4 +61,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/user/update/pic', [UserController::class, 'updateProfilePic']);
     Route::delete('/user/delete', [UserController::class, 'deleteAccount']);
     Route::get('/user', [UserController::class, 'getUser']);
+
+    //Follow
+    Route::post('/follow/{userId}', [FollowController::class, 'follow']);
+    Route::post('/unfollow/{userId}', [FollowController::class, 'unfollow']);
+    Route::get('/following', [FollowController::class, 'following']);
+    Route::get('/followers', [FollowController::class, 'followers']);
+
+    //Like
+    Route::post('/posts/{postId}/like', [LikeController::class, 'likePost']);
+    Route::delete('/posts/{postId}/unlike', [LikeController::class, 'unlikePost']);
+    Route::post('/comments/{commentId}/like', [LikeController::class, 'likeComment']);
+    Route::delete('/comments/{commentId}/unlike', [LikeController::class, 'unlikeComment']);
+    Route::get('/liked-posts', [LikeController::class, 'getLikedPosts']);
 });

@@ -47,4 +47,12 @@ class CommentController extends Controller
 
         return response()->json(['message' => 'Comment deleted successfully'], 200);
     }
+
+    public function countLikes($commentId)
+    {
+        $comment = Comment::findOrFail($commentId);
+        $likeCount = $comment->likes()->count();
+
+        return response()->json(['comment_id' => $commentId, 'likes' => $likeCount]);
+    }
 }
