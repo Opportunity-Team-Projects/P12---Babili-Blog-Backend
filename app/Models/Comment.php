@@ -8,4 +8,27 @@ use Illuminate\Database\Eloquent\Model;
 class Comment extends Model
 {
     use HasFactory;
+
+    protected $fillable = [
+        'content',
+        'user_id',
+        'post_id',
+    ];
+
+    // Beziehung zum Benutzer
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    // Beziehung zum Post
+    public function post()
+    {
+        return $this->belongsTo(Post::class);
+    }
+
+    public function likes()
+    {
+        return $this->morphMany(Like::class, 'likable');
+    }
 }
