@@ -8,6 +8,7 @@ use App\Http\Controllers\PostController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\FollowController;
 use App\Http\Controllers\LikeController;
+use App\Http\Controllers\ContactController;
 
 
 // Öffentliche Route für alle Posts (ohne Authentifizierung)
@@ -74,4 +75,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/comments/{commentId}/like', [LikeController::class, 'likeComment']);
     Route::delete('/comments/{commentId}/unlike', [LikeController::class, 'unlikeComment']);
     Route::get('/liked-posts', [LikeController::class, 'getLikedPosts']);
+
+    //Contact
+    Route::post('/contact', [ContactController::class, 'send']);
 });
