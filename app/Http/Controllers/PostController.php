@@ -14,7 +14,7 @@ class PostController extends Controller
      */
     public function index()
     {
-        $posts = Post::with('categories')->get(); // Alle Posts abrufen
+        $posts = Post::with('categories', 'user')->get(); // Alle Posts abrufen
         return response()->json($posts);
     }
 
