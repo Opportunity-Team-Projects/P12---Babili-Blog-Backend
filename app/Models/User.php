@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Notifications\ResetPasswordNotification;
 
 class User extends Authenticatable
 {
@@ -47,19 +48,19 @@ class User extends Authenticatable
 
     public function posts()
     {
-        return $this->hasMany(Post::class); 
+        return $this->hasMany(Post::class);
     }
 
     public function comments()
     {
-    return $this->hasMany(Comment::class);
+        return $this->hasMany(Comment::class);
     }
 
     public function likes()
     {
         return $this->morphMany(Like::class, 'likeable');
     }
-    
+
     // Benutzer folgt
     public function followings()
     {
@@ -72,6 +73,14 @@ class User extends Authenticatable
         return $this->belongsToMany(User::class, 'follows', 'followed_id', 'follower_id');
     }
 
-
-
+    /**
+     * Sende die Passwort-Reset-Benachrichtigung.
+     *
+     * @param  string  $token
+     * @return void
+     */
+    public function sendPasswordResetNotification($token)
+    {
+        $this->notify(new ResetPasswordNotification($token));
+    }
 }

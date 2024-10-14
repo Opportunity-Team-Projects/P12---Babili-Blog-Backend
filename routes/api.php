@@ -9,8 +9,8 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\FollowController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\ContactController;
-use Laravel\Fortify\Http\Controllers\PasswordResetLinkController;
-use Laravel\Fortify\Http\Controllers\NewPasswordController;
+//use Laravel\Fortify\Http\Controllers\PasswordResetLinkController;
+//TODO Falls Pw Reset nicht mehr nötig löschen
 
 
 // Öffentliche Route für alle Posts (ohne Authentifizierung)
@@ -35,10 +35,10 @@ Route::post('/register', [UserController::class, 'register']);
 
 //Password
 
-Route::post('/forgot-password', [PasswordResetLinkController::class, 'store']);
+/* Route::post('/forgot-password', [PasswordResetLinkController::class, 'store']);
 Route::get('/reset-password/{token}', function ($token) {
     return view('auth.reset-password', ['token' => $token]);
-})->name('password.reset');
+})->name('password.reset'); */
 
 
 
