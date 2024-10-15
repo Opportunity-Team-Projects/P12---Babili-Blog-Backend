@@ -29,17 +29,18 @@ class PostController extends Controller
         $query = $request->input('query'); // Der Suchbegriff
         $keywords = explode(' ', $query); // Suchbegriff in einzelne Wörter aufteilen
 
-        $posts = Post::where(function ($query) use ($keywords) {
-            foreach ($keywords as $word) {
-                $query->orWhereHas('user', function ($q) use ($word) {
-                    $q->where('name', 'LIKE', '%' . $word . '%'); // Benutzername
-                })
-                    ->orWhereHas('categories', function ($q) use ($word) {
-                        $q->where('categoryName', 'LIKE', '%' . $word . '%'); // Kategoriename
+        $posts = Post::with('user') // Benutzerrelation laden
+            ->where(function ($query) use ($keywords) {
+                foreach ($keywords as $word) {
+                    $query->orWhereHas('user', function ($q) use ($word) {
+                        $q->where('name', 'LIKE', '%' . $word . '%'); // Benutzername
                     })
-                    ->orWhere('contentTitle', 'LIKE', '%' . $word . '%'); // contentTitle in der Posts-Tabelle
-            }
-        })->get();
+                        ->orWhereHas('categories', function ($q) use ($word) {
+                            $q->where('categoryName', 'LIKE', '%' . $word . '%'); // Kategoriename
+                        })
+                        ->orWhere('contentTitle', 'LIKE', '%' . $word . '%'); // contentTitle in der Posts-Tabelle
+                }
+            })->get();
 
         return response()->json($posts);
     }

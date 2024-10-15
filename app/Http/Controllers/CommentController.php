@@ -14,7 +14,6 @@ class CommentController extends Controller
     {
         // Validierung der Eingaben
         $validated = $request->validate([
-            'commentTitle' => 'required|string|max:255', // Kommentar-Titel erforderlich
             'commentContent' => 'required|string',       // Kommentar-Inhalt erforderlich
         ]);
 
@@ -23,7 +22,6 @@ class CommentController extends Controller
 
         // Neuen Kommentar erstellen
         $comment = new Comment();
-        $comment->commentTitle = $validated['commentTitle'];
         $comment->commentContent = $validated['commentContent'];
         $comment->user_id = auth()->id(); // Der eingeloggte Benutzer
         $comment->post_id = $post->id;    // Der Post, zu dem der Kommentar gehört
