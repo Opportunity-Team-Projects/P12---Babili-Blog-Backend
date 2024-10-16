@@ -9,6 +9,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\FollowController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\UserCategoriesController;
 //use Laravel\Fortify\Http\Controllers\PasswordResetLinkController;
 //TODO Falls Pw Reset nicht mehr nötig löschen
 
@@ -82,4 +83,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     //Contact
     Route::post('/contact', [ContactController::class, 'send']);
+
+    //CustomFeed
+    Route::post('/user/preferences', [UserCategoriesController::class, 'savePreferences']);
+    Route::get('/user/preferences', [UserCategoriesController::class, 'getPreferences']);
 });

@@ -17,4 +17,9 @@ class Category extends Model
     {
         return $this->belongsToMany(Post::class);
     }
+
+    public function users()
+    {
+        return $this->belongsToMany(User::class);
+    }
 }
