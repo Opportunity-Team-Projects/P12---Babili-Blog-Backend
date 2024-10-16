@@ -51,6 +51,8 @@ Route::middleware('auth:sanctum')->group(function () {
     //Posts
     Route::get('/myposts', [PostController::class, 'myPosts']);  // Posts des eingeloggten Benutzers
     Route::resource('posts', PostController::class);  // CRUD für Posts (Erstellen, Bearbeiten, Löschen)
+    Route::get('/customfeed', [PostController::class, 'getPostsByUserCategories']);  //Posts für customfeed nach ausgewählten kategorien
+
 
     //Comment
     Route::post('/posts/{postid}/comments', [CommentController::class, 'store']);
@@ -87,4 +89,7 @@ Route::middleware('auth:sanctum')->group(function () {
     //CustomFeed
     Route::post('/user/preferences', [UserCategoriesController::class, 'savePreferences']);
     Route::get('/user/preferences', [UserCategoriesController::class, 'getPreferences']);
+
+    //Suche im custom feed
+    Route::get('/search/user-categories', [PostController::class, 'searchPostsInUserCategories']);
 });
