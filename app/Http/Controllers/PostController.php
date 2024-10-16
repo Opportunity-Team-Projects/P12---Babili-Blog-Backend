@@ -45,6 +45,37 @@ class PostController extends Controller
         return response()->json($posts);
     }
 
+    public function searchPostsInUserCategories(Request $request)
+    {
+        $user = auth()->user();
+        if (!$user) {
+            return response()->json(['message' => 'Nicht authentifiziert'], 401);
+        }
+
+        $queryInput = $request->input('query'); // Der Suchbegriff
+        $keywords = explode(' ', $queryInput); // Suchbegriff in einzelne Wörter aufteilen
+        $categoryIds = $user->categories()->pluck('categories.id');
+
+        $posts = Post::with('user')
+            ->whereHas('categories', function ($q) use ($categoryIds) {
+                $q->whereIn('categories.id', $categoryIds);
+            })
+            ->where(function ($query) use ($keywords) {
+                foreach ($keywords as $word) {
+                    $query->orWhereHas('user', function ($q) use ($word) {
+                        $q->where('name', 'LIKE', '%' . $word . '%'); // Benutzername
+                    })
+                        ->orWhereHas('categories', function ($q) use ($word) {
+                            $q->where('categoryName', 'LIKE', '%' . $word . '%'); // Kategoriename
+                        })
+                        ->orWhere('contentTitle', 'LIKE', '%' . $word . '%'); // contentTitle
+                }
+            })
+            ->get();
+
+        return response()->json($posts);
+    }
+
 
 
 
@@ -70,6 +101,25 @@ class PostController extends Controller
 
         // Rückgabe der Posts im JSON-Format
         return response()->json(['posts' => $posts], 200);
+    }
+
+    public function getPostsByUserCategories()
+    {
+        $user = auth()->user();
+
+        if (!$user) {
+            return response()->json(['message' => 'Nicht authentifiziert'], 401);
+        }
+
+        // Hole die IDs der Kategorien, die der Benutzer ausgewählt hat
+        $categoryIds = $user->categories()->pluck('categories.id');
+
+        // Hole die Posts, die zu diesen Kategorien gehören
+        $posts = Post::whereHas('categories', function ($query) use ($categoryIds) {
+            $query->whereIn('categories.id', $categoryIds);
+        })->with('user')->get();
+
+        return response()->json($posts);
     }
 
     /**

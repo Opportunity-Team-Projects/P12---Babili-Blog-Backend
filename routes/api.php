@@ -9,6 +9,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\FollowController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\UserCategoriesController;
 //use Laravel\Fortify\Http\Controllers\PasswordResetLinkController;
 //TODO Falls Pw Reset nicht mehr nötig löschen
 
@@ -50,6 +51,8 @@ Route::middleware('auth:sanctum')->group(function () {
     //Posts
     Route::get('/myposts', [PostController::class, 'myPosts']);  // Posts des eingeloggten Benutzers
     Route::resource('posts', PostController::class);  // CRUD für Posts (Erstellen, Bearbeiten, Löschen)
+    Route::get('/customfeed', [PostController::class, 'getPostsByUserCategories']);  //Posts für customfeed nach ausgewählten kategorien
+
 
     //Comment
     Route::post('/posts/{postid}/comments', [CommentController::class, 'store']);
@@ -82,4 +85,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
     //Contact
     Route::post('/contact', [ContactController::class, 'send']);
+
+    //CustomFeed
+    Route::post('/user/preferences', [UserCategoriesController::class, 'savePreferences']);
+    Route::get('/user/preferences', [UserCategoriesController::class, 'getPreferences']);
+
+    //Suche im custom feed
+    Route::get('/search/user-categories', [PostController::class, 'searchPostsInUserCategories']);
 });
