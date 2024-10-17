@@ -34,12 +34,10 @@ Route::get('/comments/{commentId}/likes', [CommentController::class, 'countLikes
 
 Route::post('/register', [UserController::class, 'register']);
 
-//Password
+//Contact
+Route::post('/contact', [ContactController::class, 'send']);
 
-/* Route::post('/forgot-password', [PasswordResetLinkController::class, 'store']);
-Route::get('/reset-password/{token}', function ($token) {
-    return view('auth.reset-password', ['token' => $token]);
-})->name('password.reset'); */
+
 
 
 
@@ -82,9 +80,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/comments/{commentId}/like', [LikeController::class, 'likeComment']);
     Route::delete('/comments/{commentId}/unlike', [LikeController::class, 'unlikeComment']);
     Route::get('/liked-posts', [LikeController::class, 'getLikedPosts']);
-
-    //Contact
-    Route::post('/contact', [ContactController::class, 'send']);
 
     //CustomFeed
     Route::post('/user/preferences', [UserCategoriesController::class, 'savePreferences']);
