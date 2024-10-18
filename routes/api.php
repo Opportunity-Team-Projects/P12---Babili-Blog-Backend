@@ -10,8 +10,7 @@ use App\Http\Controllers\FollowController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\UserCategoriesController;
-//use Laravel\Fortify\Http\Controllers\PasswordResetLinkController;
-//TODO Falls Pw Reset nicht mehr nötig löschen
+
 
 
 // Öffentliche Route für alle Posts (ohne Authentifizierung)
