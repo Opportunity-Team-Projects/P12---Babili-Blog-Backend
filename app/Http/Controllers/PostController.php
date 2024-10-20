@@ -14,10 +14,16 @@ class PostController extends Controller
      */
     public function index()
     {
-        $posts = Post::with('categories', 'user')->get(); // Alle Posts abrufen
-        return response()->json($posts);
-    }
+        $posts = Post::with('categories', 'user', 'likes')->get();
 
+        $posts->transform(function ($post) {
+            $post->likes_count = $post->likes()->count();
+            $post->is_liked = auth()->check() ? $post->likes()->where('user_id', auth()->id())->exists() : false;
+            return $post;
+        });
+
+        return response()->json(['posts' => $posts]);
+    }
     public function myPosts()
     {
         $posts = Post::with('categories')->where('user_id', auth()->user()->id)->get();  // Nur Posts des aktuell eingeloggten Benutzers
@@ -164,12 +170,48 @@ class PostController extends Controller
      */
     public function show($id)
     {
-        // Post anhand der ID finden, inklusive Benutzer und Kommentare (Eager Loading)
-        $post = Post::with(['user', 'comments.user', 'categories'])->findOrFail($id);
+        $post = Post::with(['user', 'comments.user', 'likes'])->findOrFail($id);
 
-        return response()->json(['post' => $post], 200);
+        $likes_count = $post->likes()->count();
+        $is_liked = auth()->check() ? $post->likes()->where('user_id', auth()->id())->exists() : false;
+
+        // Kommentare mit Like-Informationen
+        $comments = $post->comments->map(function ($comment) {
+            $likes_count = $comment->likes()->count();
+            $is_liked = auth()->check() ? $comment->likes()->where('user_id', auth()->id())->exists() : false;
+
+            return [
+                'id' => $comment->id,
+                'commentContent' => $comment->commentContent,
+                'created_at' => $comment->created_at,
+                'user' => [
+                    'id' => $comment->user->id,
+                    'name' => $comment->user->name,
+                    'profile_photo_url' => $comment->user->profile_photo_url,
+                ],
+                'likes_count' => $likes_count,
+                'is_liked' => $is_liked,
+            ];
+        });
+
+        return response()->json([
+            'post' => [
+                'id' => $post->id,
+                'contentTitle' => $post->contentTitle,
+                'content' => $post->content,
+                'contentImg' => $post->contentImg,
+                'created_at' => $post->created_at,
+                'user' => [
+                    'id' => $post->user->id,
+                    'name' => $post->user->name,
+                    'profile_photo_url' => $post->user->profile_photo_url,
+                ],
+                'likes_count' => $likes_count,
+                'is_liked' => $is_liked,
+                'comments' => $comments,
+            ]
+        ]);
     }
-
 
     /**
      * Update the specified resource in storage.
@@ -224,13 +266,5 @@ class PostController extends Controller
 
         // Erfolgreiche Antwort zurückgeben
         return response()->json(['message' => 'Post erfolgreich gelöscht!'], 200);
-    }
-
-    public function countLikes($postId)
-    {
-        $post = Post::findOrFail($postId);
-        $likeCount = $post->likes()->count();
-
-        return response()->json(['post_id' => $postId, 'likes' => $likeCount]);
     }
 }

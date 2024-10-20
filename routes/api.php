@@ -10,8 +10,7 @@ use App\Http\Controllers\FollowController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\UserCategoriesController;
-//use Laravel\Fortify\Http\Controllers\PasswordResetLinkController;
-//TODO Falls Pw Reset nicht mehr nötig löschen
+
 
 
 // Öffentliche Route für alle Posts (ohne Authentifizierung)
@@ -22,13 +21,7 @@ Route::get('/index', [PostController::class, 'index']);  // Alle Posts anzeigen
 Route::get('/posts/user/{userId}', [PostController::class, 'getPostsByUser']);
 Route::get('/posts/category/{categoryId}', [PostController::class, 'getPostsByCategory']);
 Route::get('/search', [PostController::class, 'search'])->name('search');
-Route::get('/posts/{id}', [PostController::class, 'show']);
-
-// Likes zählen für einen bestimmten Post
-Route::get('/posts/{postId}/likes', [PostController::class, 'countLikes']);
-
-// Likes zählen für einen bestimmten Kommentar
-Route::get('/comments/{commentId}/likes', [CommentController::class, 'countLikes']);
+Route::get('/posts/{postId}', [PostController::class, 'show']);
 
 //User
 
