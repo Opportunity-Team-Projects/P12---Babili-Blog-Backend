@@ -14,15 +14,10 @@ class LikeController extends Controller
         $post = Post::findOrFail($postId);
         $userId = Auth::id();
 
-        if ($post->user_id == $userId) {
-            return response()->json(['message' => 'Du kannst deinen eigenen Post nicht liken'], 403);
-        }
-
         // Überprüfen, ob der User den Post bereits geliked hat
         if (!$post->likes()->where('user_id', $userId)->exists()) {
             $post->likes()->create(['user_id' => $userId]);
         }
-
 
         // Aktualisieren der Like-Anzahl
         $likes_count = $post->likes()->count();
