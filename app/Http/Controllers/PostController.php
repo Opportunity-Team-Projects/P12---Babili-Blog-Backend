@@ -173,12 +173,27 @@ class PostController extends Controller
         $post = Post::with(['user', 'comments.user', 'likes'])->findOrFail($id);
 
         $likes_count = $post->likes()->count();
-        $is_liked = false;
-        if (auth()->check()) {
-            $is_liked = $post->likes()->where('user_id', auth()->id())->exists();
-        }
+        $is_liked = auth()->check() ? $post->likes()->where('user_id', auth()->id())->exists() : false;
 
-        // Bereiten Sie die Daten für die Rückgabe vor
+        // Kommentare mit Like-Informationen
+        $comments = $post->comments->map(function ($comment) {
+            $likes_count = $comment->likes()->count();
+            $is_liked = auth()->check() ? $comment->likes()->where('user_id', auth()->id())->exists() : false;
+
+            return [
+                'id' => $comment->id,
+                'commentContent' => $comment->commentContent,
+                'created_at' => $comment->created_at,
+                'user' => [
+                    'id' => $comment->user->id,
+                    'name' => $comment->user->name,
+                    'profile_photo_url' => $comment->user->profile_photo_url,
+                ],
+                'likes_count' => $likes_count,
+                'is_liked' => $is_liked,
+            ];
+        });
+
         return response()->json([
             'post' => [
                 'id' => $post->id,
@@ -193,7 +208,7 @@ class PostController extends Controller
                 ],
                 'likes_count' => $likes_count,
                 'is_liked' => $is_liked,
-                'comments' => $post->comments,
+                'comments' => $comments,
             ]
         ]);
     }
