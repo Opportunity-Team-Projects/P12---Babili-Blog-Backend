@@ -16,9 +16,12 @@ class PostController extends Controller
     {
         $posts = Post::with('categories', 'user', 'likes')->get();
 
-        $posts->transform(function ($post) {
+        $userId = auth()->id();
+
+        $posts->transform(function ($post) use ($userId) {
             $post->likes_count = $post->likes()->count();
-            $post->is_liked = auth()->check() ? $post->likes()->where('user_id', auth()->id())->exists() : false;
+            $post->is_liked = $userId ? $post->likes()->where('user_id', $userId)->exists() : false;
+            $post->is_bookmarked = $userId ? $post->bookmarkedBy()->where('user_id', $userId)->exists() : false;
             return $post;
         });
 
@@ -172,8 +175,10 @@ class PostController extends Controller
     {
         $post = Post::with(['user', 'comments.user', 'likes'])->findOrFail($id);
 
+
         $likes_count = $post->likes()->count();
         $is_liked = auth()->check() ? $post->likes()->where('user_id', auth()->id())->exists() : false;
+        $is_bookmarked = auth()->check() ? $post->bookmarkedBy()->where('user_id', auth()->id())->exists() : false;
 
         // Kommentare mit Like-Informationen
         $comments = $post->comments->map(function ($comment) {
@@ -191,6 +196,7 @@ class PostController extends Controller
                 ],
                 'likes_count' => $likes_count,
                 'is_liked' => $is_liked,
+
             ];
         });
 
@@ -209,6 +215,7 @@ class PostController extends Controller
                 'likes_count' => $likes_count,
                 'is_liked' => $is_liked,
                 'comments' => $comments,
+                'is_bookmarked' => $is_bookmarked,
             ]
         ]);
     }
