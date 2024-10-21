@@ -21,6 +21,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'profile_pic',
     ];
 
     /**
@@ -88,4 +89,14 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Category::class);
     }
+
+    public function getProfilePicUrlAttribute()
+{
+    if ($this->profile_pic) {
+        return asset('storage/' . $this->profile_pic);
+    } else {
+        return asset('images/default-profile.png'); // Pfad zum Standardbild
+    }
+}
+
 }

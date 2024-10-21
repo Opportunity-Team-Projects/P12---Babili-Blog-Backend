@@ -40,7 +40,7 @@ Route::post('/contact', [ContactController::class, 'send']);
 Route::middleware('auth:sanctum')->group(function () {
 
     //Posts
-    Route::get('/myposts', [PostController::class, 'myPosts']);  // Posts des eingeloggten Benutzers
+    Route::get('/my-posts', [PostController::class, 'myPosts']);  // Posts des eingeloggten Benutzers
     Route::resource('posts', PostController::class);  // CRUD für Posts (Erstellen, Bearbeiten, Löschen)
     Route::get('/customfeed', [PostController::class, 'getPostsByUserCategories']);  //Posts für customfeed nach ausgewählten kategorien
 
