@@ -37,9 +37,7 @@ class PostController extends Controller
     {
         $userId = auth()->id(); // Authentifizierten Benutzer abrufen
 
-        if (!$userId) {
-            return response()->json(['message' => 'Nicht authentifiziert'], 401);
-        }
+
 
         $query = $request->input('query'); // Der Suchbegriff
         $keywords = explode(' ', $query); // Suchbegriff in einzelne Wörter aufteilen
