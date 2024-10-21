@@ -139,26 +139,28 @@ class UserController extends Controller
         $request->validate([
             'profile_pic' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
-
+    
         $user = Auth::user();
-
-        // Wenn bereits ein Profilbild vorhanden ist, lösche es
+    
+        // Altes Profilbild löschen, falls vorhanden
         if ($user->profile_pic) {
-            Storage::delete($user->profile_pic);
+            Storage::disk('public')->delete($user->profile_pic);
         }
-
-        // Speichere das neue Bild im 'public/profile_pics' Ordner
+    
+        // Neues Bild speichern
         $path = $request->file('profile_pic')->store('profile_pics', 'public');
-
-        // Aktualisiere die `profile_pic`-Spalte in der Datenbank (nur den relevanten Pfad speichern)
-        $user->profile_pic = str_replace('public/', '', $path); // Speichere nur 'profile_pics/...'
+    
+        // Pfad in der Datenbank speichern
+        $user->profile_pic = $path;
         $user->save();
-
-        // Generiere die öffentliche URL zum Bild
-        $profilePicUrl = asset('storage/' . $user->profile_pic);
-
-        return response()->json(['message' => 'Profilbild erfolgreich aktualisiert', 'profile_pic_url' => $profilePicUrl], 200);
+    
+        // Profilbild-URL zurückgeben
+        return response()->json([
+            'message' => 'Profilbild erfolgreich aktualisiert',
+            'profile_pic_url' => $user->profile_pic_url,
+        ]);
     }
+    
 
     public function deleteAccount()
     {
