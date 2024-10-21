@@ -85,6 +85,44 @@ class PostController extends Controller
         return response()->json($posts);
     }
 
+    public function searchBookmarkedPosts(Request $request)
+    {
+        $userId = auth()->id();
+
+        if (!$userId) {
+            return response()->json(['message' => 'Nicht authentifiziert'], 401);
+        }
+
+        $queryInput = $request->input('query'); // Der Suchbegriff
+        $keywords = explode(' ', $queryInput); // Suchbegriff in einzelne Wörter aufteilen
+
+        $posts = Post::whereHas('bookmarkedBy', function ($q) use ($userId) {
+            $q->where('user_id', $userId);
+        })
+            ->with(['user', 'likes', 'categories'])
+            ->where(function ($q) use ($keywords) {
+                foreach ($keywords as $word) {
+                    $q->orWhereHas('user', function ($q2) use ($word) {
+                        $q2->where('name', 'LIKE', '%' . $word . '%'); // Benutzername
+                    })
+                        ->orWhereHas('categories', function ($q2) use ($word) {
+                            $q2->where('categoryName', 'LIKE', '%' . $word . '%'); // Kategoriename
+                        })
+                        ->orWhere('contentTitle', 'LIKE', '%' . $word . '%'); // contentTitle in der Posts-Tabelle
+                }
+            })
+            ->get();
+
+        $posts->transform(function ($post) use ($userId) {
+            $post->likes_count = $post->likes()->count();
+            $post->is_liked = $post->likes()->where('user_id', $userId)->exists();
+            $post->is_bookmarked = true; // Da es sich um gebookmarkte Posts handelt
+            return $post;
+        });
+
+        return response()->json($posts);
+    }
+
 
 
 

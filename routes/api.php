@@ -80,6 +80,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     //Suche im custom feed
     Route::get('/search/user-categories', [PostController::class, 'searchPostsInUserCategories']);
+    Route::get('/search/bookmarked', [PostController::class, 'searchBookmarkedPosts']);
 
     //Bookmark
     Route::post('/posts/{postId}/bookmark', [BookmarkController::class, 'bookmarkPost']);
