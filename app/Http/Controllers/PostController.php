@@ -19,7 +19,7 @@ class PostController extends Controller
         $userId = auth()->id();
 
         $posts->transform(function ($post) use ($userId) {
-          
+
             $post->is_liked = $userId ? $post->likes()->where('user_id', $userId)->exists() : false;
             $post->is_bookmarked = $userId ? $post->bookmarkedBy()->where('user_id', $userId)->exists() : false;
             $post->comments_count = $post->comments()->count(); // Added comments_count
@@ -67,10 +67,10 @@ class PostController extends Controller
                     $query->orWhereHas('user', function ($q) use ($word) {
                         $q->where('name', 'LIKE', '%' . $word . '%');
                     })
-                    ->orWhereHas('categories', function ($q) use ($word) {
-                        $q->where('categoryName', 'LIKE', '%' . $word . '%');
-                    })
-                    ->orWhere('contentTitle', 'LIKE', '%' . $word . '%');
+                        ->orWhereHas('categories', function ($q) use ($word) {
+                            $q->where('categoryName', 'LIKE', '%' . $word . '%');
+                        })
+                        ->orWhere('contentTitle', 'LIKE', '%' . $word . '%');
                 }
             })
             ->get();
@@ -119,10 +119,10 @@ class PostController extends Controller
                     $query->orWhereHas('user', function ($q) use ($word) {
                         $q->where('name', 'LIKE', '%' . $word . '%');
                     })
-                    ->orWhereHas('categories', function ($q) use ($word) {
-                        $q->where('categoryName', 'LIKE', '%' . $word . '%');
-                    })
-                    ->orWhere('contentTitle', 'LIKE', '%' . $word . '%');
+                        ->orWhereHas('categories', function ($q) use ($word) {
+                            $q->where('categoryName', 'LIKE', '%' . $word . '%');
+                        })
+                        ->orWhere('contentTitle', 'LIKE', '%' . $word . '%');
                 }
             })
             ->get();
@@ -130,7 +130,7 @@ class PostController extends Controller
         // Transformation der Posts, um zusätzliche Felder hinzuzufügen
         $posts->transform(function ($post) use ($user) {
             $post->likes_count = $post->likes()->count();
-          $post->comments_count = $post->comments()->count();
+            $post->comments_count = $post->comments()->count();
             $post->is_liked = $post->likes()->where('user_id', $user->id)->exists();
             $post->is_bookmarked = $post->bookmarkedBy()->where('user_id', $user->id)->exists();
             return $post;
@@ -211,7 +211,7 @@ class PostController extends Controller
         $posts = Post::whereHas('categories', function ($query) use ($categoryId) {
             $query->where('categories.id', $categoryId);
         })
-        ->get();
+            ->get();
 
         $posts->transform(function ($post) {
             $post->comments_count = $post->comments()->count(); // Added comments_count
@@ -237,8 +237,8 @@ class PostController extends Controller
         $posts = Post::whereHas('categories', function ($query) use ($categoryIds) {
             $query->whereIn('categories.id', $categoryIds);
         })
-        ->with('user')
-        ->get();
+            ->with('user')
+            ->get();
 
         $posts->transform(function ($post) {
             $post->likes_count = $post->likes()->count();
@@ -317,28 +317,29 @@ class PostController extends Controller
             ];
         });
 
-        return response()->json([
-            'post' => [
-                'id' => $post->id,
-                'contentTitle' => $post->contentTitle,
-                'content' => $post->content,
-                'contentImg' => $post->contentImg,
-                'created_at' => $post->created_at,
-                'user' => [
-                    'id' => $post->user->id,
-                    'name' => $post->user->name,
-                    'profile_photo_url' => $post->user->profile_photo_url,
-                ],
-                'likes_count' => $likes_count,
-                'is_liked' => $is_liked,
-                'comments_count' => $post->comments()->count(), // Added comments_count
-                'comments' => $comments,
+        return response()->json(
+            [
+                'post' => [
+                    'id' => $post->id,
+                    'contentTitle' => $post->contentTitle,
+                    'content' => $post->content,
+                    'contentImg' => $post->contentImg,
+                    'created_at' => $post->created_at,
+                    'user' => [
+                        'id' => $post->user->id,
+                        'name' => $post->user->name,
+                        'profile_photo_url' => $post->user->profile_photo_url,
+                    ],
+                    'likes_count' => $likes_count,
+                    'is_liked' => $is_liked,
+                    'comments_count' => $post->comments()->count(), // Added comments_count
+                    'comments' => $comments,
 
-                'is_bookmarked' => $is_bookmarked,
-            ]
+                    'is_bookmarked' => $is_bookmarked,
+                ]
 
             ],
-        ]);
+        );
     }
 
     /**
