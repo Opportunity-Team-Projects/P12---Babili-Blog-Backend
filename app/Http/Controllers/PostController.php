@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Log;
 class PostController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of all posts.
      */
     public function index()
     {
@@ -19,20 +19,38 @@ class PostController extends Controller
         $userId = auth()->id();
 
         $posts->transform(function ($post) use ($userId) {
-            $post->likes_count = $post->likes()->count();
+          
             $post->is_liked = $userId ? $post->likes()->where('user_id', $userId)->exists() : false;
             $post->is_bookmarked = $userId ? $post->bookmarkedBy()->where('user_id', $userId)->exists() : false;
+            $post->comments_count = $post->comments()->count(); // Added comments_count
+            $post->likes_count = $post->likes()->count();
+
             return $post;
         });
 
         return response()->json(['posts' => $posts]);
     }
+
+    /**
+     * Display posts of the authenticated user.
+     */
     public function myPosts()
     {
-        $posts = Post::with('categories')->where('user_id', auth()->user()->id)->get();  // Nur Posts des aktuell eingeloggten Benutzers
+        $posts = Post::with('categories')
+            ->where('user_id', auth()->user()->id)
+            ->get();
+
+        $posts->transform(function ($post) {
+            $post->comments_count = $post->comments()->count(); // Added comments_count
+            return $post;
+        });
+
         return response()->json($posts);
     }
 
+    /**
+     * Search for posts based on a query.
+     */
     public function search(Request $request)
     {
         $userId = auth()->id(); // Authentifizierten Benutzer abrufen
@@ -43,17 +61,28 @@ class PostController extends Controller
         $keywords = explode(' ', $query); // Suchbegriff in einzelne Wörter aufteilen
 
         $posts = Post::with(['user', 'likes', 'bookmarkedBy']) // Benutzer, Likes und Bookmarks laden
+
             ->where(function ($query) use ($keywords) {
                 foreach ($keywords as $word) {
                     $query->orWhereHas('user', function ($q) use ($word) {
-                        $q->where('name', 'LIKE', '%' . $word . '%'); // Benutzername
+                        $q->where('name', 'LIKE', '%' . $word . '%');
                     })
-                        ->orWhereHas('categories', function ($q) use ($word) {
-                            $q->where('categoryName', 'LIKE', '%' . $word . '%'); // Kategoriename
-                        })
-                        ->orWhere('contentTitle', 'LIKE', '%' . $word . '%'); // contentTitle in der Posts-Tabelle
+                    ->orWhereHas('categories', function ($q) use ($word) {
+                        $q->where('categoryName', 'LIKE', '%' . $word . '%');
+                    })
+                    ->orWhere('contentTitle', 'LIKE', '%' . $word . '%');
                 }
-            })->get();
+            })
+            ->get();
+
+        $posts->transform(function ($post) {
+            $post->likes_count = $post->likes()->count();
+            $post->is_liked = auth()->check()
+                ? $post->likes()->where('user_id', auth()->id())->exists()
+                : false;
+            $post->comments_count = $post->comments()->count(); // Added comments_count
+            return $post;
+        });
 
         // Transformation der Posts, um zusätzliche Felder hinzuzufügen
         $posts->transform(function ($post) use ($userId) {
@@ -66,6 +95,9 @@ class PostController extends Controller
         return response()->json($posts);
     }
 
+    /**
+     * Search for posts within the user's selected categories.
+     */
 
     public function searchPostsInUserCategories(Request $request)
     {
@@ -74,8 +106,8 @@ class PostController extends Controller
             return response()->json(['message' => 'Nicht authentifiziert'], 401);
         }
 
-        $queryInput = $request->input('query'); // Der Suchbegriff
-        $keywords = explode(' ', $queryInput); // Suchbegriff in einzelne Wörter aufteilen
+        $queryInput = $request->input('query');
+        $keywords = explode(' ', $queryInput);
         $categoryIds = $user->categories()->pluck('categories.id');
 
         $posts = Post::with(['user', 'likes', 'bookmarkedBy']) // Benutzer, Likes und Bookmarks laden
@@ -85,12 +117,12 @@ class PostController extends Controller
             ->where(function ($query) use ($keywords) {
                 foreach ($keywords as $word) {
                     $query->orWhereHas('user', function ($q) use ($word) {
-                        $q->where('name', 'LIKE', '%' . $word . '%'); // Benutzername
+                        $q->where('name', 'LIKE', '%' . $word . '%');
                     })
-                        ->orWhereHas('categories', function ($q) use ($word) {
-                            $q->where('categoryName', 'LIKE', '%' . $word . '%'); // Kategoriename
-                        })
-                        ->orWhere('contentTitle', 'LIKE', '%' . $word . '%'); // contentTitle
+                    ->orWhereHas('categories', function ($q) use ($word) {
+                        $q->where('categoryName', 'LIKE', '%' . $word . '%');
+                    })
+                    ->orWhere('contentTitle', 'LIKE', '%' . $word . '%');
                 }
             })
             ->get();
@@ -98,6 +130,7 @@ class PostController extends Controller
         // Transformation der Posts, um zusätzliche Felder hinzuzufügen
         $posts->transform(function ($post) use ($user) {
             $post->likes_count = $post->likes()->count();
+          $post->comments_count = $post->comments()->count();
             $post->is_liked = $post->likes()->where('user_id', $user->id)->exists();
             $post->is_bookmarked = $post->bookmarkedBy()->where('user_id', $user->id)->exists();
             return $post;
@@ -137,41 +170,60 @@ class PostController extends Controller
 
         $posts->transform(function ($post) use ($userId) {
             $post->likes_count = $post->likes()->count();
+            $post->comments_count = $post->comments()->count();
             $post->is_liked = $post->likes()->where('user_id', $userId)->exists();
             $post->is_bookmarked = true; // Da es sich um gebookmarkte Posts handelt
+
             return $post;
         });
 
         return response()->json($posts);
     }
 
-
-
-
+    /**
+     * Get posts by a specific user.
+     */
     public function getPostsByUser($userId)
     {
         $user = User::find($userId);
 
         if ($user) {
-            // Lade die Posts des Benutzers zusammen mit den Kategorien
-            $posts = Post::with('categories')->where('user_id', $user->id)->get();
+            $posts = Post::with('categories')
+                ->where('user_id', $user->id)
+                ->get();
+
+            $posts->transform(function ($post) {
+                $post->comments_count = $post->comments()->count(); // Added comments_count
+                return $post;
+            });
+
             return response()->json($posts);
         } else {
             return response()->json(['message' => 'User not found'], 404);
         }
     }
 
+    /**
+     * Get posts by a specific category.
+     */
     public function getPostsByCategory($categoryId)
     {
-        // Hole alle Posts, die zur angegebenen Kategorie gehören
         $posts = Post::whereHas('categories', function ($query) use ($categoryId) {
             $query->where('categories.id', $categoryId);
-        })->get();
+        })
+        ->get();
 
-        // Rückgabe der Posts im JSON-Format
+        $posts->transform(function ($post) {
+            $post->comments_count = $post->comments()->count(); // Added comments_count
+            return $post;
+        });
+
         return response()->json(['posts' => $posts], 200);
     }
 
+    /**
+     * Get posts based on the user's selected categories.
+     */
     public function getPostsByUserCategories()
     {
         $user = auth()->user();
@@ -180,56 +232,58 @@ class PostController extends Controller
             return response()->json(['message' => 'Nicht authentifiziert'], 401);
         }
 
-        // Hole die IDs der Kategorien, die der Benutzer ausgewählt hat
         $categoryIds = $user->categories()->pluck('categories.id');
 
-        // Hole die Posts, die zu diesen Kategorien gehören
         $posts = Post::whereHas('categories', function ($query) use ($categoryIds) {
             $query->whereIn('categories.id', $categoryIds);
-        })->with('user')->get();
+        })
+        ->with('user')
+        ->get();
+
+        $posts->transform(function ($post) {
+            $post->likes_count = $post->likes()->count();
+            $post->is_liked = auth()->check()
+                ? $post->likes()->where('user_id', auth()->id())->exists()
+                : false;
+            $post->comments_count = $post->comments()->count(); // Added comments_count
+            return $post;
+        });
 
         return response()->json($posts);
     }
 
     /**
-
-     * Store a newly created resource in storage.
+     * Store a newly created post in storage.
      */
-
     public function store(Request $request)
     {
         $validated = $request->validate([
             'contentTitle' => 'required|string|max:255',
             'content' => 'required',
-            'contentImg' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:4096', // Optionales Bild
-            'category_ids' => 'required|array', // Validierung für ein Array von Kategorie-IDs
-            'category_ids.*' => 'exists:categories,id', // Jede Kategorie-ID muss in der Kategorie-Tabelle existieren
+            'contentImg' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:4096',
+            'category_ids' => 'required|array',
+            'category_ids.*' => 'exists:categories,id',
         ]);
 
-        // Neuen Post erstellen
         $post = new Post();
         $post->contentTitle = $validated['contentTitle'];
         $post->content = $validated['content'];
-        $post->user_id = auth()->id(); // Der eingeloggte Benutzer
+        $post->user_id = auth()->id();
 
-        // Speichere das contentImg, falls es vorhanden ist
         if ($request->hasFile('contentImg')) {
             $contentImgPath = $request->file('contentImg')->store('content_images', 'public');
-            $post->contentImg = $contentImgPath; // Speichere den Pfad in der Datenbank
+            $post->contentImg = $contentImgPath;
         }
 
         $post->save();
 
-        // Verknüpft den Post mit den Kategorien
         $post->categories()->attach($validated['category_ids']);
 
         return response()->json(['message' => 'Post created successfully!', 'post' => $post], 201);
     }
 
-
-
     /**
-     * Display the specified resource.
+     * Display a specific post.
      */
     public function show($id)
     {
@@ -237,13 +291,16 @@ class PostController extends Controller
 
 
         $likes_count = $post->likes()->count();
+
         $is_liked = auth()->check() ? $post->likes()->where('user_id', auth()->id())->exists() : false;
         $is_bookmarked = auth()->check() ? $post->bookmarkedBy()->where('user_id', auth()->id())->exists() : false;
 
-        // Kommentare mit Like-Informationen
+        // Comments with like information
         $comments = $post->comments->map(function ($comment) {
             $likes_count = $comment->likes()->count();
-            $is_liked = auth()->check() ? $comment->likes()->where('user_id', auth()->id())->exists() : false;
+            $is_liked = auth()->check()
+                ? $comment->likes()->where('user_id', auth()->id())->exists()
+                : false;
 
             return [
                 'id' => $comment->id,
@@ -274,64 +331,58 @@ class PostController extends Controller
                 ],
                 'likes_count' => $likes_count,
                 'is_liked' => $is_liked,
+                'comments_count' => $post->comments()->count(), // Added comments_count
                 'comments' => $comments,
+
                 'is_bookmarked' => $is_bookmarked,
             ]
+
+            ],
         ]);
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update a specific post.
      */
     public function update(Request $request, Post $post)
     {
-        // Überprüfen, ob der Benutzer autorisiert ist, den Post zu aktualisieren
         if (auth()->id() !== $post->user_id) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        // Validierung: Bei PATCH nur teilweise Felder erforderlich, bei PUT alle
         $rules = [
             'contentTitle' => $request->isMethod('patch') ? 'sometimes|max:255' : 'required|max:255',
             'content' => $request->isMethod('patch') ? 'sometimes' : 'required',
-            'contentImg' => 'nullable|string', // Optionale Bild-URL
-            'category_ids' => 'sometimes|array', // Kategorie-IDs als Array, falls vorhanden
-            'category_ids.*' => 'exists:categories,id' // Jede Kategorie-ID muss existieren
+            'contentImg' => 'nullable|string',
+            'category_ids' => 'sometimes|array',
+            'category_ids.*' => 'exists:categories,id',
         ];
 
         $validatedData = $request->validate($rules);
 
-        // Post aktualisieren
         $post->update($validatedData);
 
-        // Wenn Kategorien übermittelt wurden, aktualisiere die Pivot-Tabelle
         if (isset($validatedData['category_ids'])) {
-            $post->categories()->sync($validatedData['category_ids']); // Kategorien synchronisieren
+            $post->categories()->sync($validatedData['category_ids']);
         }
 
-        // Erfolgreiche Antwort zurückgeben
         return response()->json([
             'message' => 'Post erfolgreich aktualisiert!',
-            'post' => $post
+            'post' => $post,
         ], 200);
     }
 
-
-
     /**
-     * Remove the specified resource from storage.
+     * Remove a specific post.
      */
     public function destroy(Post $post)
     {
-        // Überprüfen, ob der Benutzer autorisiert ist, den Post zu löschen
         if (auth()->id() !== $post->user_id) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        // Post löschen
         $post->delete();
 
-        // Erfolgreiche Antwort zurückgeben
         return response()->json(['message' => 'Post erfolgreich gelöscht!'], 200);
     }
 }
