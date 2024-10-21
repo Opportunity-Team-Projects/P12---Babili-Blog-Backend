@@ -70,7 +70,8 @@ class PostController extends Controller
                         ->orWhereHas('categories', function ($q) use ($word) {
                             $q->where('categoryName', 'LIKE', '%' . $word . '%');
                         })
-                        ->orWhere('contentTitle', 'LIKE', '%' . $word . '%');
+                        ->orWhere('contentTitle', 'LIKE', '%' . $word . '%')
+                        ->orWhere('content', 'LIKE', '%' . $word . '%');
                 }
             })
             ->get();
@@ -122,7 +123,8 @@ class PostController extends Controller
                         ->orWhereHas('categories', function ($q) use ($word) {
                             $q->where('categoryName', 'LIKE', '%' . $word . '%');
                         })
-                        ->orWhere('contentTitle', 'LIKE', '%' . $word . '%');
+                        ->orWhere('contentTitle', 'LIKE', '%' . $word . '%')
+                        ->orWhere('content', 'LIKE', '%' . $word . '%');
                 }
             })
             ->get();
@@ -163,7 +165,8 @@ class PostController extends Controller
                         ->orWhereHas('categories', function ($q2) use ($word) {
                             $q2->where('categoryName', 'LIKE', '%' . $word . '%'); // Kategoriename
                         })
-                        ->orWhere('contentTitle', 'LIKE', '%' . $word . '%'); // contentTitle in der Posts-Tabelle
+                        ->orWhere('contentTitle', 'LIKE', '%' . $word . '%')
+                        ->orWhere('content', 'LIKE', '%' . $word . '%');
                 }
             })
             ->get();
