@@ -54,4 +54,8 @@ class Post extends Model
 
         return false;
     }
+    public function bookmarkedBy()
+    {
+        return $this->belongsToMany(User::class, 'bookmarks', 'post_id', 'user_id')->withTimestamps();
+    }
 }

@@ -10,7 +10,7 @@ use App\Http\Controllers\FollowController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\UserCategoriesController;
-
+use App\Http\Controllers\BookmarkController;
 
 
 // Öffentliche Route für alle Posts (ohne Authentifizierung)
@@ -80,4 +80,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     //Suche im custom feed
     Route::get('/search/user-categories', [PostController::class, 'searchPostsInUserCategories']);
+    Route::get('/search/bookmarked', [PostController::class, 'searchBookmarkedPosts']);
+
+    //Bookmark
+    Route::post('/posts/{postId}/bookmark', [BookmarkController::class, 'bookmarkPost']);
+    Route::delete('/posts/{postId}/unbookmark', [BookmarkController::class, 'unbookmarkPost']);
+    Route::get('/bookmarked-posts', [BookmarkController::class, 'getBookmarkedPosts']);
 });

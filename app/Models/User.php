@@ -90,6 +90,12 @@ class User extends Authenticatable
         return $this->belongsToMany(Category::class);
     }
 
+
+    public function bookmarks()
+    {
+        return $this->belongsToMany(Post::class, 'bookmarks', 'user_id', 'post_id')->withTimestamps();
+    }
+
     public function getProfilePicUrlAttribute()
 {
     if ($this->profile_pic) {
@@ -98,5 +104,6 @@ class User extends Authenticatable
         return asset('images/default-profile.png'); // Pfad zum Standardbild
     }
 }
+
 
 }

@@ -16,12 +16,15 @@ class PostController extends Controller
     {
         $posts = Post::with('categories', 'user', 'likes')->get();
 
-        $posts->transform(function ($post) {
-            $post->likes_count = $post->likes()->count();
-            $post->is_liked = auth()->check()
-                ? $post->likes()->where('user_id', auth()->id())->exists()
-                : false;
+        $userId = auth()->id();
+
+        $posts->transform(function ($post) use ($userId) {
+          
+            $post->is_liked = $userId ? $post->likes()->where('user_id', $userId)->exists() : false;
+            $post->is_bookmarked = $userId ? $post->bookmarkedBy()->where('user_id', $userId)->exists() : false;
             $post->comments_count = $post->comments()->count(); // Added comments_count
+            $post->likes_count = $post->likes()->count();
+
             return $post;
         });
 
@@ -50,10 +53,15 @@ class PostController extends Controller
      */
     public function search(Request $request)
     {
-        $query = $request->input('query');
-        $keywords = explode(' ', $query);
+        $userId = auth()->id(); // Authentifizierten Benutzer abrufen
 
-        $posts = Post::with('user')
+
+
+        $query = $request->input('query'); // Der Suchbegriff
+        $keywords = explode(' ', $query); // Suchbegriff in einzelne Wörter aufteilen
+
+        $posts = Post::with(['user', 'likes', 'bookmarkedBy']) // Benutzer, Likes und Bookmarks laden
+
             ->where(function ($query) use ($keywords) {
                 foreach ($keywords as $word) {
                     $query->orWhereHas('user', function ($q) use ($word) {
@@ -76,12 +84,21 @@ class PostController extends Controller
             return $post;
         });
 
+        // Transformation der Posts, um zusätzliche Felder hinzuzufügen
+        $posts->transform(function ($post) use ($userId) {
+            $post->likes_count = $post->likes()->count();
+            $post->is_liked = $post->likes()->where('user_id', $userId)->exists();
+            $post->is_bookmarked = $post->bookmarkedBy()->where('user_id', $userId)->exists();
+            return $post;
+        });
+
         return response()->json($posts);
     }
 
     /**
      * Search for posts within the user's selected categories.
      */
+
     public function searchPostsInUserCategories(Request $request)
     {
         $user = auth()->user();
@@ -93,7 +110,7 @@ class PostController extends Controller
         $keywords = explode(' ', $queryInput);
         $categoryIds = $user->categories()->pluck('categories.id');
 
-        $posts = Post::with('user')
+        $posts = Post::with(['user', 'likes', 'bookmarkedBy']) // Benutzer, Likes und Bookmarks laden
             ->whereHas('categories', function ($q) use ($categoryIds) {
                 $q->whereIn('categories.id', $categoryIds);
             })
@@ -110,12 +127,53 @@ class PostController extends Controller
             })
             ->get();
 
-        $posts->transform(function ($post) {
+        // Transformation der Posts, um zusätzliche Felder hinzuzufügen
+        $posts->transform(function ($post) use ($user) {
             $post->likes_count = $post->likes()->count();
-            $post->is_liked = auth()->check()
-                ? $post->likes()->where('user_id', auth()->id())->exists()
-                : false;
-            $post->comments_count = $post->comments()->count(); // Added comments_count
+          $post->comments_count = $post->comments()->count();
+            $post->is_liked = $post->likes()->where('user_id', $user->id)->exists();
+            $post->is_bookmarked = $post->bookmarkedBy()->where('user_id', $user->id)->exists();
+            return $post;
+        });
+
+
+        return response()->json($posts);
+    }
+
+    public function searchBookmarkedPosts(Request $request)
+    {
+        $userId = auth()->id();
+
+        if (!$userId) {
+            return response()->json(['message' => 'Nicht authentifiziert'], 401);
+        }
+
+        $queryInput = $request->input('query'); // Der Suchbegriff
+        $keywords = explode(' ', $queryInput); // Suchbegriff in einzelne Wörter aufteilen
+
+        $posts = Post::whereHas('bookmarkedBy', function ($q) use ($userId) {
+            $q->where('user_id', $userId);
+        })
+            ->with(['user', 'likes', 'categories'])
+            ->where(function ($q) use ($keywords) {
+                foreach ($keywords as $word) {
+                    $q->orWhereHas('user', function ($q2) use ($word) {
+                        $q2->where('name', 'LIKE', '%' . $word . '%'); // Benutzername
+                    })
+                        ->orWhereHas('categories', function ($q2) use ($word) {
+                            $q2->where('categoryName', 'LIKE', '%' . $word . '%'); // Kategoriename
+                        })
+                        ->orWhere('contentTitle', 'LIKE', '%' . $word . '%'); // contentTitle in der Posts-Tabelle
+                }
+            })
+            ->get();
+
+        $posts->transform(function ($post) use ($userId) {
+            $post->likes_count = $post->likes()->count();
+            $post->comments_count = $post->comments()->count();
+            $post->is_liked = $post->likes()->where('user_id', $userId)->exists();
+            $post->is_bookmarked = true; // Da es sich um gebookmarkte Posts handelt
+
             return $post;
         });
 
@@ -231,10 +289,11 @@ class PostController extends Controller
     {
         $post = Post::with(['user', 'comments.user', 'likes'])->findOrFail($id);
 
+
         $likes_count = $post->likes()->count();
-        $is_liked = auth()->check()
-            ? $post->likes()->where('user_id', auth()->id())->exists()
-            : false;
+
+        $is_liked = auth()->check() ? $post->likes()->where('user_id', auth()->id())->exists() : false;
+        $is_bookmarked = auth()->check() ? $post->bookmarkedBy()->where('user_id', auth()->id())->exists() : false;
 
         // Comments with like information
         $comments = $post->comments->map(function ($comment) {
@@ -254,6 +313,7 @@ class PostController extends Controller
                 ],
                 'likes_count' => $likes_count,
                 'is_liked' => $is_liked,
+
             ];
         });
 
@@ -273,6 +333,10 @@ class PostController extends Controller
                 'is_liked' => $is_liked,
                 'comments_count' => $post->comments()->count(), // Added comments_count
                 'comments' => $comments,
+
+                'is_bookmarked' => $is_bookmarked,
+            ]
+
             ],
         ]);
     }
