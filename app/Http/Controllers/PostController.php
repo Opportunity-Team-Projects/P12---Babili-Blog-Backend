@@ -35,10 +35,16 @@ class PostController extends Controller
 
     public function search(Request $request)
     {
+        $userId = auth()->id(); // Authentifizierten Benutzer abrufen
+
+        if (!$userId) {
+            return response()->json(['message' => 'Nicht authentifiziert'], 401);
+        }
+
         $query = $request->input('query'); // Der Suchbegriff
         $keywords = explode(' ', $query); // Suchbegriff in einzelne Wörter aufteilen
 
-        $posts = Post::with('user') // Benutzerrelation laden
+        $posts = Post::with(['user', 'likes', 'bookmarkedBy']) // Benutzer, Likes und Bookmarks laden
             ->where(function ($query) use ($keywords) {
                 foreach ($keywords as $word) {
                     $query->orWhereHas('user', function ($q) use ($word) {
@@ -51,8 +57,17 @@ class PostController extends Controller
                 }
             })->get();
 
+        // Transformation der Posts, um zusätzliche Felder hinzuzufügen
+        $posts->transform(function ($post) use ($userId) {
+            $post->likes_count = $post->likes()->count();
+            $post->is_liked = $post->likes()->where('user_id', $userId)->exists();
+            $post->is_bookmarked = $post->bookmarkedBy()->where('user_id', $userId)->exists();
+            return $post;
+        });
+
         return response()->json($posts);
     }
+
 
     public function searchPostsInUserCategories(Request $request)
     {
@@ -65,7 +80,7 @@ class PostController extends Controller
         $keywords = explode(' ', $queryInput); // Suchbegriff in einzelne Wörter aufteilen
         $categoryIds = $user->categories()->pluck('categories.id');
 
-        $posts = Post::with('user')
+        $posts = Post::with(['user', 'likes', 'bookmarkedBy']) // Benutzer, Likes und Bookmarks laden
             ->whereHas('categories', function ($q) use ($categoryIds) {
                 $q->whereIn('categories.id', $categoryIds);
             })
@@ -81,6 +96,15 @@ class PostController extends Controller
                 }
             })
             ->get();
+
+        // Transformation der Posts, um zusätzliche Felder hinzuzufügen
+        $posts->transform(function ($post) use ($user) {
+            $post->likes_count = $post->likes()->count();
+            $post->is_liked = $post->likes()->where('user_id', $user->id)->exists();
+            $post->is_bookmarked = $post->bookmarkedBy()->where('user_id', $user->id)->exists();
+            return $post;
+        });
+
 
         return response()->json($posts);
     }
