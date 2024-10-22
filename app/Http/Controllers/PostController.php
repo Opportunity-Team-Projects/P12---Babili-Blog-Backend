@@ -290,7 +290,7 @@ class PostController extends Controller
      */
     public function show($id)
     {
-        $post = Post::with(['user', 'comments.user', 'likes'])->findOrFail($id);
+        $post = Post::with(['user', 'categories', 'comments.user', 'likes'])->findOrFail($id);
 
 
         $likes_count = $post->likes()->count();
@@ -337,7 +337,7 @@ class PostController extends Controller
                     'is_liked' => $is_liked,
                     'comments_count' => $post->comments()->count(), // Added comments_count
                     'comments' => $comments,
-
+                    'categories' => $post->categories,
                     'is_bookmarked' => $is_bookmarked,
                 ]
 
