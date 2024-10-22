@@ -104,8 +104,6 @@ class User extends Authenticatable
     {
         if ($this->profile_pic) {
             return asset('storage/' . $this->profile_pic);
-        } else {
-            return asset('images/default-profile.png'); // Pfad zum Standardbild
         }
     }
 }

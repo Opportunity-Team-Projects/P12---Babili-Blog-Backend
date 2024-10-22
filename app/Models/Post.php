@@ -54,6 +54,12 @@ class Post extends Model
 
         return false;
     }
+
+    public function getAuthorProfilePicUrlAttribute()
+    {
+        return $this->user->profile_pic_url;
+    }
+
     public function bookmarkedBy()
     {
         return $this->belongsToMany(User::class, 'bookmarks', 'post_id', 'user_id')->withTimestamps();
