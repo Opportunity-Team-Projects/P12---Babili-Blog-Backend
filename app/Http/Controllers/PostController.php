@@ -312,7 +312,7 @@ class PostController extends Controller
                 'user' => [
                     'id' => $comment->user->id,
                     'name' => $comment->user->name,
-                    'profile_photo_url' => $comment->user->profile_photo_url,
+                    'profile_pic_url' => $comment->user->profile_pic_url,
                 ],
                 'likes_count' => $likes_count,
                 'is_liked' => $is_liked,
@@ -331,7 +331,7 @@ class PostController extends Controller
                     'user' => [
                         'id' => $post->user->id,
                         'name' => $post->user->name,
-                        'profile_photo_url' => $post->user->profile_photo_url,
+                        'profile_pic_url' => $post->user->profile_pic_url,
                     ],
                     'likes_count' => $likes_count,
                     'is_liked' => $is_liked,

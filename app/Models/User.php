@@ -39,6 +39,10 @@ class User extends Authenticatable
      *
      * @return array<string, string>
      */
+
+    protected $appends = ['profile_pic_url'];
+
+
     protected function casts(): array
     {
         return [
@@ -97,13 +101,9 @@ class User extends Authenticatable
     }
 
     public function getProfilePicUrlAttribute()
-{
-    if ($this->profile_pic) {
-        return asset('storage/' . $this->profile_pic);
-    } else {
-        return asset('images/default-profile.png'); // Pfad zum Standardbild
+    {
+        if ($this->profile_pic) {
+            return asset('storage/' . $this->profile_pic);
+        }
     }
-}
-
-
 }
